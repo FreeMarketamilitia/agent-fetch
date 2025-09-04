@@ -1,59 +1,88 @@
-# agent-fetch
+<!-- Hero -->
+<div align="center">
+  <h1>🚀 agent-fetch</h1>
+  <p><strong>A beautiful, interactive CLI to collect AGENTS.md and other docs from GitHub repositories.</strong></p>
 
-A Python command-line tool for fetching `AGENTS.md` files (or other markdown/docs) from GitHub repositories.
+  <p>
+    <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-2ea44f?style=for-the-badge">
+    <img alt="Interface" src="https://img.shields.io/badge/interface-interactive-7b68ee?style=for-the-badge">
+    <img alt="Language" src="https://img.shields.io/badge/language-python-blue?style=for-the-badge">
+  </p>
 
-## 🚀 Features
+  <p>
+    <a href="#-features">Features</a> •
+    <a href="#-quick-start">Quick Start</a> •
+    <a href="#-commands">Commands</a> •
+    <a href="#-configuration">Configuration</a> •
+    <a href="#-index-file-specification">Index Spec</a> •
+    <a href="#-example-workflows">Workflows</a> •
+    <a href="#-development">Development</a> •
+    <a href="#-license">License</a>
+  </p>
+</div>
 
-- **Interactive-first**: Default command triggers beautiful interactive file selection
-- **Flexible Automation**: Flags let advanced users skip interaction with `--all`, `--name`, or `--repo`
-- **Configurable Defaults**: Global default repo stored in config with branch overrides
-- **Beautiful UI**: Colorful menus with arrow key navigation and fuzzy search using `questionary`
-- **Cross-platform**: Works on Linux, macOS, and Windows
+<br />
 
-## 📦 Installation
+<!-- Intro -->
+<p align="center">
+  agent-fetch makes it effortless to <strong>discover, fetch, and update</strong> distributed documentation like <code>AGENTS.md</code> across monorepos or multiple projects — perfect for developers and coding agents alike.
+</p>
+
+<!-- Highlights -->
+<h2 id="-features">✨ Features</h2>
+
+<table>
+  <tr>
+    <td>🎛️ <strong>Interactive-first</strong><br/>Launch straight into a selection UI with fuzzy search.</td>
+    <td>⚙️ <strong>Flexible Automation</strong><br/>Go non-interactive with <code>--all</code>, <code>--name</code>, <code>--repo</code>, and more.</td>
+  </tr>
+  <tr>
+    <td>🧩 <strong>Configurable Defaults</strong><br/>Persist a default repo and override branch per run.</td>
+    <td>🎨 <strong>Beautiful Console UI</strong><br/>Colorful prompts powered by <code>questionary</code> and <code>rich</code>.</td>
+  </tr>
+  <tr>
+    <td>🧰 <strong>Well-structured</strong><br/>Clear modules for config, fetching, parsing, UI, and CLI.</td>
+    <td>🖥️ <strong>Cross‑platform</strong><br/>Works on macOS, Linux, and Windows.</td>
+  </tr>
+</table>
+
+<!-- Quick Start -->
+<h2 id="-quick-start">🎯 Quick Start</h2>
+
+<details open>
+<summary><strong>Install</strong></summary>
 
 ```bash
-# Option 1: Traditional pip installation
-pip install -e .
-
-# Option 2: Modern uv installation (recommended)
-uv pip install -e .
+uv tool install agent-fetch
+# or
+pip install agent-fetch
 ```
 
-## 🎯 Quick Start
+</details>
 
-### Default Setup (No Configuration Required)
-The tool comes with a pre-configured default repository and works immediately:
+<details open>
+<summary><strong>Run interactive mode</strong></summary>
 
 ```bash
-# Interactive mode (with default repo)
-agentfetch
+# Interactive selection using the configured/default repo
+agentfetch main
 ```
 
-### Change Default Repository (Optional)
-If you want to use a different repository:
+</details>
+
+<details>
+<summary><strong>Change default repository (optional)</strong></summary>
 
 ```bash
+# Persist a default repo in your config file
 agentfetch set-repo https://github.com/your-org/docs
 ```
 
-### Quick Usage Examples
+</details>
 
-```bash
-# Interactive mode (default)
-agentfetch
+<!-- Preview -->
+<h3>Expected interactive preview</h3>
 
-# Fetch all files from default repo
-agentfetch main --all
-
-# Search for specific files
-agentfetch main --name "api"  # Fuzzy matching
-
-# Use different repository
-agentfetch main --all --repo https://github.com/org/docs
-```
-
-### Expected Interactive Output
 ```
 📁 Files in index.yaml
 Select files to fetch using ↑/↓ arrows, space to select, enter to confirm
@@ -63,36 +92,135 @@ Select files to fetch using ↑/↓ arrows, space to select, enter to confirm
   Next.js App APIs Guide
 ```
 
-## 📋 Commands
+<!-- Commands -->
+<h2 id="-commands">📋 Commands</h2>
 
-| Command | Description |
-|---------|-------------|
-| `agentfetch` | Interactive mode (default) |
-| `agentfetch --all` | Fetch all files |
-| `agentfetch --name <query>` | Fetch by name (fuzzy matching) |
-| `agentfetch --repo <url>` | Fetch from alternate repo |
-| `agentfetch --branch <branch>` | Fetch from specific branch |
-| `agentfetch --no-overwrite` | Skip existing files |
-| `agentfetch set-repo <url>` | Set global default repo |
-| `agentfetch show-repo` | Display current config |
-| `agentfetch list` | List files in index.yaml |
-| `agentfetch validate` | Validate index.yaml |
+<p><strong>Executable:</strong> <code>agentfetch</code> (entry point for the Typer app)</p>
 
-## 🔧 Configuration
+<h3>Subcommands</h3>
 
-Configuration is stored in:
-- **Linux/macOS**: `~/.agentfetch/config.yaml`
-- **Windows**: `%APPDATA%\agentfetch\config.yaml`
+<table>
+  <thead>
+    <tr>
+      <th>Subcommand</th>
+      <th>Description</th>
+      <th>Common Options</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>main</code></td>
+      <td>Interactive fetcher and batch options</td>
+      <td>
+        <code>--all</code> •
+        <code>--name TEXT</code> •
+        <code>--repo URL</code> •
+        <code>--branch TEXT</code> •
+        <code>--no-overwrite</code>
+      </td>
+    </tr>
+    <tr>
+      <td><code>list</code></td>
+      <td>List entries from <code>index.yaml</code></td>
+      <td>
+        <code>--repo URL</code> •
+        <code>--branch TEXT</code>
+      </td>
+    </tr>
+    <tr>
+      <td><code>validate</code></td>
+      <td>Validate <code>index.yaml</code> exists and is well-formed</td>
+      <td>
+        <code>--repo URL</code> •
+        <code>--branch TEXT</code>
+      </td>
+    </tr>
+    <tr>
+      <td><code>set-repo</code></td>
+      <td>Persist a default repository URL</td>
+      <td>
+        <code>URL</code> (positional)
+      </td>
+    </tr>
+    <tr>
+      <td><code>show-repo</code></td>
+      <td>Show current default repository and branch</td>
+      <td>—</td>
+    </tr>
+  </tbody>
+</table>
 
-Example config:
+<h3><code>main</code> options (from the actual CLI)</h3>
+
+```bash
+agentfetch main [OPTIONS]
+
+Options:
+  --all                       Fetch all files defined in index.yaml
+  --name TEXT                 Fetch one file by name (supports fuzzy matching)
+  --repo TEXT                 Alternate repository URL to fetch from
+  --branch TEXT               Branch name to fetch from
+  --no-overwrite              Skip existing files instead of overwriting
+  --help                      Show this message and exit
+```
+
+<h3>Top-level help</h3>
+
+```bash
+agentfetch --help
+# Shows available subcommands:
+# main, list, validate, set-repo, show-repo
+```
+
+<!-- Usage Examples -->
+<h2>🧪 Usage Examples</h2>
+
+```bash
+# Interactive mode (default behavior of the "main" subcommand)
+agentfetch main
+
+# Fetch all files from the configured/default repo
+agentfetch main --all
+
+# Search by name (fuzzy)
+agentfetch main --name "api"
+
+# Override repository and/or branch for this run
+agentfetch main --all --repo https://github.com/org/docs --branch develop
+
+# List entries (non-interactive)
+agentfetch list --repo https://github.com/org/docs --branch main
+
+# Validate index.yaml in a repo/branch
+agentfetch validate --repo https://github.com/org/docs --branch main
+
+# Persist default repository for future runs
+agentfetch set-repo https://github.com/your-org/docs
+
+# Inspect current defaults
+agentfetch show-repo
+```
+
+<!-- Configuration -->
+<h2 id="-configuration">🔧 Configuration</h2>
+<p>Configuration is stored in:</p>
+<ul>
+  <li><strong>Linux/macOS</strong>: <code>~/.agentfetch/config.yaml</code></li>
+  <li><strong>Windows</strong>: <code>%APPDATA%\agentfetch\config.yaml</code></li>
+</ul>
+
+<p>Example config:</p>
+
 ```yaml
 default_repo: "https://github.com/org/agents"
 default_branch: "main"
 ```
 
-## 📁 Index File Specification
+<p>Note: This project ships with a sensible default repo in code. If you don’t set one explicitly, the CLI will try that default or require <code>--repo</code> when needed.</p>
 
-The tool expects an `index.yaml` file in the repository root with this structure:
+<!-- Index Spec -->
+<h2 id="-index-file-specification">📁 Index File Specification</h2>
+<p>Place an <code>index.yaml</code> at the root of your target repository:</p>
 
 ```yaml
 agents:
@@ -105,48 +233,52 @@ agents:
     target: "downloads/api.md"
 ```
 
-## 🔍 Example Workflows
+<!-- Workflows -->
+<h2 id="-example-workflows">🔍 Example Workflows</h2>
 
-### Standard Development Workflow
+<h3>Standard Development Workflow</h3>
+
 ```bash
-# Set up default repository
+# Set up default repository (optional but recommended)
 agentfetch set-repo https://github.com/your-org/docs
 
 # Interactive selection for daily use
-agentfetch
+agentfetch main
 
 # Automate fetching all docs
-agentfetch --all
+agentfetch main --all
 
 # Fetch specific documentation
-agentfetch --name "user guide"
+agentfetch main --name "user guide"
 ```
 
-### CI/CD Integration
+<h3>CI/CD Integration</h3>
+
 ```bash
 # Non-interactive batch operation
-agentfetch --all --repo https://github.com/org/docs --branch main
+agentfetch main --all --repo https://github.com/org/docs --branch main
 ```
 
-### Multi-Repository Setup
+<h3>Multi-Repository Setup</h3>
+
 ```bash
-# Fetch from monorepo
-agentfetch --repo https://github.com/org/monorepo
-
-# Fetch from specific branch
-agentfetch --repo https://github.com/org/monorepo --branch feature/new-docs
+# Fetch from a monorepo, override branch
+agentfetch main --repo https://github.com/org/monorepo --branch feature/new-docs
 ```
 
-## 🛠️ Development
+<!-- Development -->
+<h2 id="-development">🛠️ Development</h2>
 
-This tool is modular and easily extensible, following Python best practices with:
+<p>This tool is modular and easily extensible, following Python best practices with:</p>
+<ul>
+  <li><strong>OOP Design</strong>: Clean class-based architecture</li>
+  <li><strong>Separation of Concerns</strong>: Config, fetching, parsing, UI, and CLI</li>
+  <li><strong>Robust Error Handling</strong>: Comprehensive error handling throughout</li>
+  <li><strong>Rich UI</strong>: Beautiful, colorful console output</li>
+</ul>
 
-- **OOP Design**: Clean class-based architecture
-- **Separation of Concerns**: Config, fetching, parsing, and UI as separate modules
-- **Robust Error Handling**: Comprehensive error handling throughout
-- **Rich UI**: Beautiful, colorful console output with Rich
+<h3>Project Structure</h3>
 
-### Project Structure
 ```
 agents_collector/
 ├── config/              # Configuration management
@@ -157,28 +289,38 @@ agents_collector/
 └── __init__.py
 ```
 
-### Dependencies
-- `typer`: CLI framework
-- `pyyaml`: YAML parsing
-- `requests`: HTTP client
-- `questionary`: Interactive menus
-- `rapidfuzz`: Fuzzy matching
-- `rich`: Beautiful console output
+<h3>Dependencies</h3>
+<ul>
+  <li><code>typer</code> — CLI framework</li>
+  <li><code>pyyaml</code> — YAML parsing</li>
+  <li><code>requests</code> — HTTP client</li>
+  <li><code>questionary</code> — Interactive menus</li>
+  <li><code>rapidfuzz</code> — Fuzzy matching</li>
+  <li><code>rich</code> — Beautiful console output</li>
+</ul>
 
-## 🤝 Contributing
+<!-- Contributing -->
+<h2 id="-contributing">🤝 Contributing</h2>
+<p>Contributions are welcome! It’s easy to:</p>
+<ul>
+  <li>Add new fetcher backends (GitLab, local files, etc.)</li>
+  <li>Extend interactive selection features</li>
+  <li>Add new CLI commands</li>
+  <li>Support additional index file formats</li>
+</ul>
 
-The tool follows a modular architecture that makes it easy to:
-- Add new fetcher backends (GitLab, local files, etc.)
-- Extend interactive selection features
-- Add new CLI commands
-- Support additional index file formats
+<!-- License -->
+<h2 id="-license">📄 License</h2>
+<p>MIT License</p>
 
-## 📄 License
+<hr />
 
-MIT License
+<!-- Why -->
+<h2>🎉 Why agent-fetch?</h2>
+<p>
+  Keep your documentation synchronized across teams and codebases. agent-fetch simplifies the process of collecting, organizing, and updating distributed <code>AGENTS.md</code> files so developers and agents always work with the latest, consistent knowledge.
+</p>
 
----
-
-## 🎉 Why agent-fetch?
-
-This tool makes it simple to **collect, organize, and update** `AGENTS.md` files across monorepos or multiple projects, ensuring consistency for both developers and coding agents.
+<p align="center">
+  <em>Found this useful? Star the repo to support the project!</em> ⭐
+</p>

@@ -183,5 +183,5 @@ class ConfigManager:
         """
         return {
             "default_branch": "main",
-            "default_repo": "https://github.com/FreeMarketamilitia/agent-fetch",
+            "default_repo": "https://github.com/FreeMarketamilitia/awesome-agents-md",
         }

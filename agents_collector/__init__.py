@@ -6,12 +6,12 @@ files from GitHub repositories with interactive selection and automation capabil
 """
 
 __version__ = "0.1.0"
-__author__ = "Agents Collector Team"
+__author__ = "FreeMarketamilitia"
 
 # Package metadata
 __title__ = "agent-fetch"
 __description__ = "CLI tool for fetching AGENTS.md files from GitHub"
-__url__ = "https://github.com/example/agents-collector-cli"
+__url__ = "https://github.com/FreeMarketamilitia/agent-fetch"
 
 from .cli import app
 
