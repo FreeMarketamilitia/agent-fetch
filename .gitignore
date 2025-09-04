@@ -30,6 +30,7 @@ ENV/
 
 # IDE and Editor files
 .vscode/
+agent-fetch.code-workspace
 .idea/
 *.swp
 *.swo
