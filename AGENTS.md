@@ -1,597 +1,257 @@
-# 🤖 AGENTS.md - Agent Fetch Tool Guide
+# 🤖 AGENTS.md — LLM Operations Guide for agent-fetch
 
-## Welcome
-
-**Hello! I'm your AI development assistant for the agent-fetch tool.**
-
-This document provides comprehensive guidance for developers, CI/CD systems, and AI agents working with the agent-fetch tool, including detailed usage examples, configuration options, and troubleshooting guides.
-
-## 📋 Table of Contents
-
-1. [Quick Start](#quick-start)
-2. [Command Reference](#command-reference)
-3. [Configuration Guide](#configuration-guide)
-4. [Advanced Usage](#advanced-usage)
-5. [Troubleshooting](#troubleshooting)
-6. [Integration Examples](#integration-examples)
-7. [Best Practices](#best-practices)
+This document teaches an LLM how to operate the agent-fetch CLI safely and effectively across interactive, batch, and CI contexts. It reflects the actual command surface implemented in [agents_collector/cli/cli_main.py](agents_collector/cli/cli_main.py) and key behaviors in [python.def main()](agents_collector/cli/cli_main.py:151), [python.def list()](agents_collector/cli/cli_main.py:203), [python.def validate()](agents_collector/cli/cli_main.py:222), [python.def set_repo()](agents_collector/cli/cli_main.py:252), and [python.def show_repo()](agents_collector/cli/cli_main.py:269).
 
 ---
 
-## 🚀 Quick Start
+## 0) Principles for Autonomous Use
 
-### Installation
+- Prefer deterministic, non-interactive commands in automation. Use interactive selection only for human-in-the-loop workflows.
+- Always validate the target repository before fetching when possible.
+- Use explicit repository/branch overrides in CI to avoid relying on user config.
+- Read output and handle partial success; do not assume all files fetched.
+- Respect existing files. Note: current implementation appends if the target file exists (see Implementation Notes).
+
+---
+
+## 1) Install and Entry Point
+
+- Install: 
 
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd agent-fetch
-
-# Install the tool
-pip install -e .
+uv tool install agent-fetch
+# or
+pip install agent-fetch
 ```
 
-### Basic Usage (No Setup Required)
+- Entry point executable: `agentfetch` (Typer application)
+- Interactive and batch operations are exposed under the `main` subcommand.
 
-The tool comes pre-configured with a default repository, so it works immediately:
+Tip: `agentfetch --help` lists subcommands. Use `agentfetch main --help` for the fetching options.
+
+---
+
+## 2) Quick Start (LLM-safe)
+
+- Interactive selection (human-in-the-loop):
 
 ```bash
-# Interactive mode (uses default repo automatically)
-agentfetch
+agentfetch main
+```
 
-# Fetch all files automatically
+- Fetch everything from the configured/default repo:
+
+```bash
 agentfetch main --all
+```
 
-# Fetch specific files with fuzzy search
+- Fetch by fuzzy name:
+
+```bash
 agentfetch main --name "api"
 ```
 
-### Using a Different Repository
-
-If you want to use a repository other than the default:
+- One-off use with different repo/branch:
 
 ```bash
-# Override with --repo flag for one-time use
-agentfetch main --all --repo https://github.com/your-org/docs
+agentfetch main --all --repo https://github.com/org/docs --branch main
+```
 
-# Change default repository permanently
+- Persist a default repo for future runs:
+
+```bash
 agentfetch set-repo https://github.com/your-org/docs
 ```
 
-### Expected Output
-
-```
-📁 Files in index.yaml
-Select files to fetch using ↑/↓ arrows, space to select, enter to confirm
-
-❯ Python APIs Guide
-  Shadcn UI Components Guide
-  Next.js App APIs Guide
-
-3 files selected
-
-Processing...
-✓ Python APIs Guide - Success
-✓ Shadcn UI Components Guide - Success
-✓ Next.js App APIs Guide - Success
-
-Summary: 3/3 files fetched successfully
-```
-
----
-
-## 📚 Command Reference
-
-### Core Commands
-
-| Command | Purpose | Example |
-|---------|---------|---------|
-| `agentfetch` | Interactive file selection | `agentfetch` |
-| `agentfetch --all` | Fetch all files | `agentfetch --all` |
-| `agentfetch --name <query>` | Search by fuzzy matching | `agentfetch --name "frontend"` |
-| `agentfetch --repo <url>` | Use different repo | `agentfetch --repo https://github.com/org/docs` |
-| `agentfetch --branch <branch>` | Specify branch | `agentfetch --branch develop` |
-| `agentfetch --no-overwrite` | Skip existing files | `agentfetch --no-overwrite` |
-
-### Configuration Commands
-
-| Command | Purpose | Example |
-|---------|---------|---------|
-| `agentfetch set-repo <url>` | Set default repository | `agentfetch set-repo https://github.com/org/docs` |
-| `agentfetch show-repo` | Display current config | `agentfetch show-repo` |
-| `agentfetch list` | List available files | `agentfetch list` |
-| `agentfetch validate` | Check repo/index validity | `agentfetch validate` |
-
-### Detailed Command Examples
-
-#### Interactive Mode
-```bash
-agentfetch
-```
-Launches a beautiful terminal interface with:
-- Arrow key navigation
-- Space bar selection
-- Enter to confirm
-- Fuzzy search support
-
-#### Batch Mode
-```bash
-# Fetch everything
-agentfetch --all
-
-# Target specific repository
-agentfetch --all --repo https://github.com/org/templates
-
-# Use specific branch
-agentfetch --all --branch feature/new-docs
-
-# Combination
-agentfetch --all --repo https://github.com/org/docs --branch main --no-overwrite
-```
-
-#### Search Mode
-```bash
-# Partial matching
-agentfetch --name "api"
-
-# Multiple words
-agentfetch --name "user manual"
-
-# Case insensitive
-agentfetch --name "Frontend Guide"
-```
-
----
-
-## ⚙️ Configuration Guide
-
-### Configuration Location
-
-**Linux/macOS:**
-```
-~/.agentfetch/config.yaml
-```
-
-**Windows:**
-```
-%APPDATA%\agentfetch\config.yaml
-```
-
-### Default Configuration
-
-The tool comes with a pre-configured default repository:
-
-**Default Repo:** `https://github.com/FreeMarketamilitia/agent-fetch`
+- Show current defaults:
 
 ```bash
-# View current configuration to see defaults
 agentfetch show-repo
-
-# Expected output:
-┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Setting    ┃ Value                                                   ┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Repository │ https://github.com/FreeMarketamilitia/agent-fetch       │
-│ Branch     │ main                                                    │
-└────────────┴─────────────────────────────────────────────────────────┘
 ```
 
-### Custom Configuration
+---
 
-If you want to use a different repository:
+## 3) Commands and Options (ground truth)
+
+These commands are defined in [agents_collector/cli/cli_main.py](agents_collector/cli/cli_main.py). The fetching surface is implemented in [python.def main()](agents_collector/cli/cli_main.py:151).
+
+- Fetcher: `agentfetch main [OPTIONS]`
+  - `--all` — Fetch all files defined in index.yaml
+  - `--name TEXT` — Fetch one file by name (fuzzy matching)
+  - `--repo TEXT` — Alternate repository URL to fetch from
+  - `--branch TEXT` — Branch name to fetch from
+  - `--no-overwrite` — Skip existing files instead of overwriting (see notes)
+
+- List entries: `agentfetch list [--repo TEXT] [--branch TEXT]` → [python.def list()](agents_collector/cli/cli_main.py:203)
+- Validate repository/index: `agentfetch validate [--repo TEXT] [--branch TEXT]` → [python.def validate()](agents_collector/cli/cli_main.py:222)
+- Set default repo: `agentfetch set-repo URL` → [python.def set_repo()](agents_collector/cli/cli_main.py:252)
+- Show defaults: `agentfetch show-repo` → [python.def show_repo()](agents_collector/cli/cli_main.py:269)
+
+---
+
+## 4) Configuration
+
+- Location:
+  - macOS/Linux: `~/.agentfetch/config.yaml`
+  - Windows: `%APPDATA%\agentfetch\config.yaml`
+
+- Defaults are defined in [python.def _get_default_config()](agents_collector/config/config_manager.py:178):
+
+```yaml
+default_branch: "main"
+default_repo: "https://github.com/FreeMarketamilitia/awesome-agents-md"
+```
+
+- Commands:
 
 ```bash
-# Set your custom repository
 agentfetch set-repo https://github.com/your-organization/documentation
+agentfetch show-repo
 ```
 
-**Configuration File Structure:**
-```yaml
-default_repo: "https://github.com/FreeMarketamilitia/agent-fetch"
-default_branch: "main"
-```
+---
 
-The configuration file contains user overrides - if you set a custom repo, it will override the default.
+## 5) Required Repository Structure (target)
 
-### Target Repository Structure
-
-Your target repository must have an `index.yaml` file in the root:
+The target repository must include an `index.yaml` in its root with entries like:
 
 ```yaml
 agents:
-  - name: "Python Development Guide"
-    source: "guides/python/AGENTS.md"
-    target: "python/AGENTS.md"
-
-  - name: "API Reference"
-    source: "docs/api/AGENTS.md"
-    target: "api/AGENTS.md"
-
-  - name: "UI Components Guide"
-    source: "components/ui/AGENTS.md"
-    target: "ui/AGENTS.md"
+  - name: "Root Guide"
+    source: "AGENTS.md"
+    target: "downloads/root.md"
+  - name: "API Guide"
+    source: "services/api/AGENTS.md"
+    target: "downloads/api.md"
 ```
 
 ---
 
-## 🔧 Advanced Usage
+## 6) End-to-End Playbooks
 
-### CI/CD Integration
-
-#### GitHub Actions Example
-
-```yaml
-name: Fetch Documentation
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours
-
-jobs:
-  fetch-docs:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: Install agent-fetch
-        run: pip install git+https://github.com/your-org/agent-fetch.git
-
-      - name: Fetch documentation
-        run: |
-          agentfetch --all --repo https://github.com/your-org/docs
-
-      - name: Commit and push (if changes)
-        run: |
-          git add .
-          if git diff-index --quiet HEAD; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update documentation [auto-fetch]"
-            git push
-          fi
-```
-
-#### Jenkins Pipeline
-
-```groovy
-pipeline {
-    agent any
-
-    stages {
-        stage('Fetch Docs') {
-            steps {
-                sh '''
-                python3 -m pip install git+https://github.com/your-org/agent-fetch.git
-                agentfetch --all --repo https://github.com/your-org/docs
-                '''
-            }
-        }
-
-        stage('Commit Changes') {
-            steps {
-                sh '''
-                git add .
-                git commit -m "Update docs [CI]" || echo "No changes"
-                git push origin main || echo "No push needed"
-                '''
-            }
-        }
-    }
-}
-```
-
-### Multi-Repository Setup
+A) Fetch all files deterministically from a specific repo/branch:
 
 ```bash
-#!/bin/bash
-# Fetch from multiple repositories
+agentfetch validate --repo https://github.com/org/docs --branch main
+agentfetch list --repo https://github.com/org/docs --branch main
+agentfetch main --all --repo https://github.com/org/docs --branch main
+```
 
+B) Fetch a specific file by fuzzy name:
+
+```bash
+agentfetch main --name "user guide" --repo https://github.com/org/docs --branch main
+```
+
+C) Human-in-the-loop selection:
+
+```bash
+agentfetch main
+```
+
+D) CI usage (GitHub Actions step):
+
+```bash
+agentfetch main --all --repo https://github.com/org/docs --branch main
+```
+
+---
+
+## 7) Output Interpretation
+
+Successful runs print a table followed by a summary, e.g.:
+
+```
+Summary: 3/3 files fetched successfully
+```
+
+- Treat partial success as non-terminal; proceed to next steps while reporting failures.
+- If no entries are selected/found, exit gracefully with a neutral status.
+
+---
+
+## 8) Implementation Notes and Behaviors (for planning)
+
+- Default repo/branch are read via [python.class ConfigManager](agents_collector/config/config_manager.py:14) and [python.def get_default_branch()](agents_collector/config/config_manager.py:153)/[python.def get_default_repo()](agents_collector/config/config_manager.py:137).
+- Fetching uses [python.class GitHubFetcher](agents_collector/fetcher/github_fetcher.py:14). Raw file URLs are built by [python.def build_raw_url()](agents_collector/fetcher/github_fetcher.py:65).
+- Existing-file behavior: in [python.def fetch_files_from_index()](agents_collector/fetcher/github_fetcher.py:133) files are appended if the target already exists:
+
+```python
+append_mode = target_path.exists()
+```
+
+- The `overwrite` flag propagated from CLI is currently not enforced by the fetcher; plan workflows accordingly (e.g., clean targets before run or choose unique target paths).
+
+---
+
+## 9) Troubleshooting (LLM decision tree)
+
+1) Command returns "No such option":
+
+```bash
+# Likely missing the 'main' subcommand
+agentfetch main --help
+```
+
+2) Validation fails for index.yaml:
+
+```bash
+agentfetch validate --repo https://github.com/org/docs --branch main
+# If still failing, ensure 'index.yaml' exists at repo root and is publicly accessible.
+```
+
+3) No default repository configured:
+
+```bash
+agentfetch set-repo https://github.com/your-org/docs
+agentfetch show-repo
+```
+
+4) Network or 404 fetching a file:
+
+- Confirm the source path in index.yaml is correct for the chosen branch.
+- Retry with a known-good file via `--name`.
+
+---
+
+## 10) Examples for Programmatic Use
+
+Python (subprocess) skeleton:
+
+```python
+import subprocess, pathlib
+
+def fetch_all(repo, branch="main"):
+    subprocess.run(["agentfetch", "validate", "--repo", repo, "--branch", branch], check=True)
+    subprocess.run(["agentfetch", "main", "--all", "--repo", repo, "--branch", branch], check=True)
+
+def fetch_by_name(name, repo, branch="main"):
+    subprocess.run(["agentfetch", "main", "--name", name, "--repo", repo, "--branch", branch], check=True)
+```
+
+Bash loop for multiple repos:
+
+```bash
 repos=(
-    "https://github.com/org/docs:main"
-    "https://github.com/org/templates:develop"
-    "https://github.com/org/guides:v2.1"
+  "https://github.com/org/docs:main"
+  "https://github.com/org/templates:develop"
 )
-
-for repo in "${repos[@]}"; do
-    url=$(echo $repo | cut -d: -f1)
-    branch=$(echo $repo | cut -d: -f2)
-
-    echo "Fetching from: $url ($branch)"
-    agentfetch --all --repo $url --branch $branch
+for item in "${repos[@]}"; do
+  url="${item%%:*}"
+  branch="${item##*:}"
+  agentfetch main --all --repo "$url" --branch "$branch"
 done
 ```
 
-### Custom Scripting
-
-```python
-#!/usr/bin/env python3
-# custom_fetch.py
-
-import subprocess
-import pathlib
-
-def fetch_urgent_docs():
-    """Fetch only urgent documentation files"""
-
-    # List available files
-    result = subprocess.run(['agentfetch', 'list'],
-                          capture_output=True, text=True, cwd=pathlib.Path.cwd())
-
-    if result.returncode == 0:
-        # Parse output and filter by priority
-        priority_files = [
-            "Security Guide",
-            "API Reference",
-            "User Manual"
-        ]
-
-        for file in priority_files:
-            subprocess.run(['agentfetch', '--name', file])
-
-    return "Urgent docs fetched successfully"
-
-if __name__ == "__main__":
-    print(fetch_urgent_docs())
-```
-
 ---
 
-## 🔍 Troubleshooting
+## 11) Summary
 
-### Common Issues
+- Use `agentfetch main` for interactive and batch fetching.
+- Validate and list before fetch in automation.
+- Prefer explicit `--repo` and `--branch` in CI.
+- Be aware of append-on-existing behavior in the current fetcher.
 
-#### 1. "No such option" Error
+For human-friendly overview and visuals, see [README.md](README.md).
 
-**Problem:**
-```bash
-Error: No such option: --all
-```
-
-**Solution:**
-Use the correct command format:
-```bash
-# ❌ Wrong
-agentfetch --all
-
-# ✅ Correct for basic usage
-agentfetch main --all
-```
-
-#### 2. Repository Not Found
-
-**Problem:**
-```
-Error: Repository not found or access denied
-```
-
-**Solutions:**
-```bash
-# Check repository URL
-agentfetch validate --repo https://github.com/your-org/repo
-
-# Ensure it's a public repository or you have access token
-# Set up authentication if needed
-```
-
-#### 3. Configuration Not Found
-
-**Problem:**
-```
-Error: No default repository configured
-```
-
-**Solution:**
-```bash
-agentfetch set-repo https://github.com/your-org/docs
-```
-
-#### 4. Branch Not Found
-
-**Problem:**
-```
-Error: Branch 'feature/not-found' not found
-```
-
-**Solution:**
-```bash
-# List available branches and choose valid one
-agentfetch list --repo https://github.com/org/repo --branch main
-```
-
-### Debug Mode
-
-Enable verbose output for troubleshooting:
-
-```bash
-# Check repository structure
-agentfetch validate --repo https://github.com/your-org/repo
-
-# List all available files
-agentfetch list --repo https://github.com/your-org/repo
-```
-
-### File Permissions
-
-If you encounter permission issues:
-```bash
-# On macOS/Linux
-chmod +x ~/.agentfetch/config.yaml
-
-# On Windows, ensure proper permissions for %APPDATA%\agentfetch
-```
-
----
-
-## 🔌 Integration Examples
-
-### With Development Workflows
-
-#### Pre-commit Hook
-
-```bash
-#!/bin/bash
-# .git/hooks/pre-commit
-
-echo "Fetching latest documentation..."
-agentfetch --all --no-overwrite
-
-echo "Documentation updated successfully"
-```
-
-#### Python Project Integration
-
-```python
-# setup_fetch.py
-import subprocess
-import pathlib
-
-def ensure_docs_are_current():
-    """Ensure documentation is up to date before builds"""
-    try:
-        subprocess.run(['agentfetch', 'main', '--all', '--no-overwrite'],
-                      check=True, cwd=pathlib.Path.cwd())
-        return True
-    except subprocess.CalledProcessError:
-        print("Failed to fetch documentation")
-        return False
-
-# Use in CI/CD
-if __name__ == "__main__":
-    if ensure_docs_are_current():
-        print("✓ Documentation is current")
-    else:
-        exit(1)
-```
-
-### With Documentation Tools
-
-#### MkDocs Integration
-
-```bash
-#!/bin/bash
-# docs_update.sh
-
-echo "Step 1: Fetch latest docs"
-agentfetch --all
-
-echo "Step 2: Build documentation"
-mkdocs build
-
-echo "Step 3: Deploy"
-mkdocs gh-deploy
-```
-
-#### Sphinx Documentation
-
-```bash
-#!/bin/bash
-# sphinx_update.sh
-
-echo "Fetching documentation guides"
-agentfetch --all --repo https://github.com/your-org/sphinx-docs
-
-echo "Building Sphinx documentation"
-make html
-
-echo "Serving documentation"
-python -m http.server 8000 --directory _build/html
-```
-
----
-
-## 📋 Best Practices
-
-### Repository Organization
-
-1. **Clear Naming Convention**
-   ```yaml
-   # Use descriptive names in index.yaml
-   agents:
-     - name: "REST API Documentation"
-       source: "docs/api/rest/AGENTS.md"
-       target: "api/rest.md"
-
-     - name: "GraphQL Schema Guide"
-       source: "docs/api/graphql/AGENTS.md"
-       target: "api/graphql.md"
-   ```
-
-2. **Consistent Folder Structure**
-   ```
-   docs/
-   ├── api/
-   │   ├── rest/
-   │   │   └── AGENTS.md
-   │   └── graphql/
-   │       └── AGENTS.md
-   └── ui/
-       └── components/
-           └── AGENTS.md
-   ```
-
-### CI/CD Recommendations
-
-1. **Schedule Regular Updates**
-   ```yaml
-   # Daily at 2 AM
-   on:
-     schedule:
-       - cron: '0 2 * * *'
-   ```
-
-2. **Conditional Updates**
-   ```bash
-   # Only update if there are changes in source repo
-   agentfetch --all --no-overwrite
-   ```
-
-3. **Error Handling**
-   ```yaml
-   - name: Safe fetch
-     run: |
-       agentfetch --all --no-overwrite
-     continue-on-error: true
-   ```
-
-### Team Collaboration
-
-1. **Shared Configuration**
-   ```yaml
-   # Shared config for team repos
-   default_repo: "https://github.com/team/documentation"
-   default_branch: "main"
-   ```
-
-2. **Documentation Standards**
-   - Use consistent naming
-   - Include dates/updates
-   - Add change history
-
-3. **Access Control**
-   - Ensure team members have access to target repositories
-   - Use branch protections appropriately
-
----
-
-## 🎯 Summary
-
-This AGENTS.md guide provides comprehensive documentation for using the agent-fetch tool effectively. Key takeaways:
-
-1. **Installation**: `pip install -e .`
-2. **Configuration**: Set up default repository with `agentfetch set-repo`
-3. **Basic Usage**:
-   - Interactive: `agentfetch`
-   - Batch: `agentfetch main --all`
-   - Search: `agentfetch main --name "search term"`
-4. **Integration**: Easily integrates with CI/CD and development workflows
-5. **Best Practices**: Use consistent naming and regular updates
-
-For additional help or issues, please reference the troubleshooting section or open an issue in the project repository.
-
-**Happy fetching! 🚀**
+Happy fetching. 🚀
